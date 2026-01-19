@@ -761,7 +761,7 @@ function buildInlineKeyboard(quickReplies: QuickReply[]): Array<Array<{ text: st
 }
 
 const server = new Server(
-  { name: "telegram-feedback-mcp", version: "0.3.1" },
+  { name: "mcp-agentchat", version: "0.1.0" },
   { capabilities: { tools: {} } }
 );
 

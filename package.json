@@ -1,7 +1,7 @@
 {
-  "name": "telegram-feedback-mcp",
-  "version": "0.3.1",
-  "description": "基于 Telegram 的交互式反馈 MCP：让 AI 随时发问并等待用户回复（含图片）",
+  "name": "mcp-agentchat",
+  "version": "0.1.0",
+  "description": "MCP AgentChat - 让 AI Agent 通过 Telegram 与用户实时交互：发送消息、图片，等待用户回复",
   "type": "module",
   "repository": {
     "type": "git",
@@ -12,7 +12,7 @@
     "url": "https://github.com/Lynricsy/AgentChatMCP/issues"
   },
   "bin": {
-    "telegram-feedback-mcp": "./build/index.js"
+    "mcp-agentchat": "./build/index.js"
   },
   "files": [
     "build"
@@ -34,6 +34,10 @@
   "keywords": [
     "mcp",
     "telegram",
+    "agentchat",
+    "agent",
+    "chat",
+    "ai",
     "feedback",
     "interactive"
   ],

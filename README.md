@@ -1,9 +1,9 @@
-# 🤖 Telegram Feedback MCP
+# 🤖 MCP AgentChat
 
-[![npm version](https://img.shields.io/npm/v/telegram-feedback-mcp.svg)](https://www.npmjs.com/package/telegram-feedback-mcp)
+[![npm version](https://img.shields.io/npm/v/mcp-agentchat.svg)](https://www.npmjs.com/package/mcp-agentchat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-一个 **Model Context Protocol (MCP)** 服务，让 AI Agent 通过 **Telegram** 与用户实时交互：发送消息、图片，等待用户回复。
+**MCP AgentChat** - 一个 Model Context Protocol (MCP) 服务，让 AI Agent 通过 **Telegram** 与用户实时交互：发送消息、图片，等待用户回复。
 
 ## ✨ 特性
 
@@ -20,10 +20,10 @@
 
 ```bash
 # 全局安装
-npm install -g telegram-feedback-mcp
+npm install -g mcp-agentchat
 
 # 或者本地安装
-npm install telegram-feedback-mcp
+npm install mcp-agentchat
 ```
 
 ## 🔧 配置
@@ -136,9 +136,9 @@ npm install telegram-feedback-mcp
 ```json
 {
   "mcpServers": {
-    "telegram-feedback": {
+    "agentchat": {
       "command": "npx",
-      "args": ["telegram-feedback-mcp"],
+      "args": ["mcp-agentchat"],
       "env": {
         "TELEGRAM_BOT_TOKEN": "your-bot-token",
         "TELEGRAM_CHAT_ID": "your-chat-id"
@@ -153,9 +153,9 @@ npm install telegram-feedback-mcp
 ```json
 {
   "mcpServers": {
-    "telegram-feedback": {
+    "agentchat": {
       "command": "node",
-      "args": ["/path/to/telegram-feedback-mcp/build/index.js"],
+      "args": ["/path/to/mcp-agentchat/build/index.js"],
       "env": {
         "TELEGRAM_BOT_TOKEN": "your-bot-token",
         "TELEGRAM_CHAT_ID": "your-chat-id",
