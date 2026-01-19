@@ -1,0 +1,78 @@
+# 📦 自动构建和发布到 npm
+#
+# 触发条件：
+# - 推送标签 v* 时自动发布
+# - 手动触发工作流
+#
+# 前置配置：
+# 1. 在 npm 生成 Access Token (Automation)
+# 2. 在 GitHub 仓库 Settings > Secrets and variables > Actions 中添加 NPM_TOKEN
+
+name: 🚀 Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只构建不发布 (dry run)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  build-and-publish:
+    name: 📦 Build & Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔨 Build
+        run: npm run build
+
+      - name: 🧪 Verify build
+        run: |
+          echo "✅ Checking build output..."
+          ls -la build/
+          test -f build/index.js && echo "✅ build/index.js exists" || (echo "❌ build/index.js not found" && exit 1)
+
+      - name: 📝 Get package version
+        id: package
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Package version: $VERSION"
+
+      - name: 🚀 Publish to npm
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: 📋 Dry run publish
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: |
+          echo "🏃 Dry run mode - skipping actual publish"
+          npm pack --dry-run
+
+      - name: 🎉 Done
+        run: |
+          echo "✨ Successfully published telegram-feedback-mcp@${{ steps.package.outputs.version }}"
+          echo "📦 https://www.npmjs.com/package/telegram-feedback-mcp"
