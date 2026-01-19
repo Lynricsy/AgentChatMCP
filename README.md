@@ -5,6 +5,7 @@
 ## 功能
 
 - 提问：将 `summary` 发送到 Telegram（可带项目目录上下文）
+- **发送图片**：支持 `images` 参数，AI 可以发送本地图片给用户
 - 等回复：轮询 `getUpdates`，匹配"发送问题后"的用户消息
 - **候选回复按钮**：支持 `quick_replies` 参数，用户可一键快捷回复
 - 返结果：返回 MCP `content`（文字 + 图片 base64）
@@ -81,6 +82,9 @@ MarkdownV2 对特殊字符要求更严格，常见需要转义的字符包括：
 - `quick_replies`：候选回复按钮列表（可选）
   - 每个按钮包含 `text`（显示文本）和可选的 `callback_data`（回调数据，默认使用 text）
   - 用户可以点击按钮快捷回复，也可以正常输入文字/图片回复
+- `images`：要发送的图片列表（可选）
+  - 每个元素是图片的绝对路径
+  - 图片会在发送文字消息后依次发送
 
 说明：
 - `include_context` **固定为 true**（不对 AI 暴露配置）：服务端会在 `summary` 前附加"项目目录/超时"的前缀，且按 parse_mode 对前缀字段做必要转义，避免破坏 summary 的格式。
@@ -100,6 +104,20 @@ MarkdownV2 对特殊字符要求更严格，常见需要转义的字符包括：
 ```
 
 用户在 Telegram 中会看到带有三个按钮的消息，点击任意按钮即可快速回复。
+
+#### 发送图片示例
+
+```json
+{
+  "summary": "这是我生成的设计稿，请查看：",
+  "images": [
+    "/path/to/design1.png",
+    "/path/to/design2.jpg"
+  ]
+}
+```
+
+AI 可以指定本地图片的绝对路径，图片会在文字消息后发送给用户。
 
 ### get_last_feedback_response
 

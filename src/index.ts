@@ -25,6 +25,8 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import axios from "axios";
 import path from "node:path";
+import fs from "node:fs";
+import FormData from "form-data";
 
 type McpTextContent = { type: "text"; text: string };
 type McpImageContent = { type: "image"; data: string; mimeType: string };
@@ -71,6 +73,12 @@ type InteractiveFeedbackArgs = {
    * 如果不提供 callback_data，则使用 text 作为回调数据。
    */
   quick_replies?: QuickReply[];
+  /**
+   * 要发送的图片列表（可选）。
+   * 每个元素是图片的绝对路径。
+   * 图片会在发送文字消息后依次发送。
+   */
+  images?: string[];
 };
 
 function mustGetEnv(name: string): string {
@@ -316,6 +324,72 @@ async function telegramAnswerCallbackQuery(callbackQueryId: string, text?: strin
     const desc = extractTelegramErrorDescription(error) ?? String(error);
     console.error(`answerCallbackQuery 失败：${desc}`);
   }
+}
+
+/**
+ * 发送图片到 Telegram
+ * @param imagePath 图片的绝对路径
+ * @param caption 可选的图片说明
+ * @param parseMode 可选的解析模式
+ * @returns 发送的消息 ID
+ */
+async function telegramSendPhoto(
+  imagePath: string,
+  caption?: string,
+  parseMode?: string
+): Promise<number> {
+  // 检查文件是否存在
+  if (!fs.existsSync(imagePath)) {
+    throw new Error(`图片文件不存在：${imagePath}`);
+  }
+
+  const form = new FormData();
+  form.append("chat_id", TELEGRAM_CHAT_ID);
+  form.append("photo", fs.createReadStream(imagePath));
+
+  if (caption) {
+    form.append("caption", caption);
+  }
+  if (parseMode) {
+    form.append("parse_mode", parseMode);
+  }
+
+  const res = await axios.post(`${TELEGRAM_API_URL}/sendPhoto`, form, {
+    headers: form.getHeaders()
+  });
+
+  if (!res.data?.ok) {
+    const desc = res.data?.description ?? "未知错误";
+    throw new Error(`Telegram sendPhoto 失败：${desc}`);
+  }
+
+  return res.data.result.message_id as number;
+}
+
+/**
+ * 批量发送图片
+ * @param imagePaths 图片路径列表
+ * @param parseMode 可选的解析模式
+ * @returns 发送的消息 ID 列表
+ */
+async function telegramSendPhotos(
+  imagePaths: string[],
+  parseMode?: string
+): Promise<number[]> {
+  const messageIds: number[] = [];
+
+  for (const imagePath of imagePaths) {
+    try {
+      const messageId = await telegramSendPhoto(imagePath, undefined, parseMode);
+      messageIds.push(messageId);
+    } catch (error) {
+      const desc = extractTelegramErrorDescription(error) ?? String(error);
+      console.error(`发送图片失败（${imagePath}）：${desc}`);
+      // 继续发送其他图片，不中断流程
+    }
+  }
+
+  return messageIds;
 }
 
 async function telegramGetUpdates(): Promise<TelegramUpdate[]> {
@@ -687,7 +761,7 @@ function buildInlineKeyboard(quickReplies: QuickReply[]): Array<Array<{ text: st
 }
 
 const server = new Server(
-  { name: "telegram-feedback-mcp", version: "0.2.0" },
+  { name: "telegram-feedback-mcp", version: "0.3.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -740,6 +814,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                   }
                 },
                 required: ["text"]
+              }
+            },
+            images: {
+              type: "array",
+              description:
+                "要发送的图片列表（可选）。每个元素是图片的绝对路径。图片会在发送文字消息后依次发送。",
+              items: {
+                type: "string",
+                description: "图片的绝对路径"
               }
             }
           }
@@ -799,6 +882,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const summary = String(args.summary ?? "请检查我刚刚完成的改动，并回复你的意见/下一步指令。");
     const emergency = Boolean(args.emergency ?? false);
     const quickReplies = Array.isArray(args.quick_replies) ? args.quick_replies : [];
+    const images = Array.isArray(args.images) ? args.images : [];
 
     const timeoutSeconds = getTimeoutSeconds(emergency);
     const effectiveParseMode = normalizeParseMode(args.parse_mode) ?? PARSE_MODE;
@@ -821,6 +905,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
         forceReply: FORCE_REPLY && !inlineKeyboard, // 如果有按钮则不需要 force_reply
         inlineKeyboard
       });
+
+      // 发送图片（如果有）
+      if (images.length > 0) {
+        await telegramSendPhotos(images, effectiveParseMode);
+      }
 
       // 记录"最近一次提问"，用于外部强制超时后恢复
       lastPromptContext = {
